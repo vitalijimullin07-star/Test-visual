@@ -37,6 +37,9 @@
     // Двойной клик для сброса вида
     svg.addEventListener('dblclick', resetView);
 
+    // Добавляем сетку
+    addGrid();
+
     console.log('[canvas] Инициализирован');
   }
 
@@ -207,6 +210,41 @@
     // Удаляем все динамические элементы (стены, точки и т.д. оставляем через отдельные модули)
     const dynamic = svg.querySelectorAll('.wall, .opening, .socket, .junction, .wall-label');
     dynamic.forEach(el => el.remove());
+  }
+
+  function addGrid() {
+    if (!svg) return;
+    
+    // Удаляем старую сетку если есть
+    const oldGrid = svg.querySelector('#grid-pattern');
+    if (oldGrid) oldGrid.remove();
+
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    pattern.setAttribute('id', 'grid-pattern');
+    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    pattern.setAttribute('width', '50');  // 50px шаг сетки
+    pattern.setAttribute('height', '50');
+    
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('width', '50');
+    rect.setAttribute('height', '50');
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', '#334155');
+    rect.setAttribute('stroke-width', '0.5');
+    rect.setAttribute('opacity', '0.3');
+    
+    pattern.appendChild(rect);
+    defs.appendChild(pattern);
+    svg.appendChild(defs);
+
+    // Применяем паттерн как фон
+    const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    gridRect.setAttribute('width', '100%');
+    gridRect.setAttribute('height', '100%');
+    gridRect.setAttribute('fill', 'url(#grid-pattern)');
+    gridRect.setAttribute('class', 'grid-background');
+    svg.insertBefore(gridRect, svg.firstChild);
   }
 
   // Публичное API

@@ -9,6 +9,7 @@
   let isDrawingWall = false;
   let currentWallPoints = [];
   let tempLine = null;
+  let orthogonalSnap = true; // По умолчанию включено
 
   const WALL_COLOR = '#64748b';
   const OPENING_COLOR = '#eab308';
@@ -33,6 +34,19 @@
 
     // Загружаем существующие стены при старте
     setTimeout(renderAll, 100);
+
+    // Обработчик кнопки "Прямые углы"
+    const orthoBtn = document.getElementById('btn-ortho-toggle');
+    if (orthoBtn) {
+      orthoBtn.addEventListener('click', () => {
+        orthogonalSnap = !orthogonalSnap;
+        if (orthogonalSnap) {
+          orthoBtn.classList.add('active');
+        } else {
+          orthoBtn.classList.remove('active');
+        }
+      });
+    }
 
     console.log('[walls] Модуль инициализирован');
   }
@@ -70,11 +84,26 @@
       currentWallPoints.push({ x, y });
       updateTempLine(x, y);
 
-      // Если это вторая точка — сразу сохраняем стену
+      // Если это вторая точка — применяем snap если нужно и сохраняем стену
       if (currentWallPoints.length >= 2) {
+        let endPoint = currentWallPoints[1];
+        
+        if (orthogonalSnap && currentWallPoints.length === 2) {
+          const start = currentWallPoints[0];
+          const dx = endPoint.x - start.x;
+          const dy = endPoint.y - start.y;
+          
+          // Прилипание к горизонтали или вертикали
+          if (Math.abs(dx) > Math.abs(dy)) {
+            endPoint = { x: endPoint.x, y: start.y }; // горизонтальная
+          } else {
+            endPoint = { x: start.x, y: endPoint.y }; // вертикальная
+          }
+        }
+        
         const wall = {
           a: currentWallPoints[0],
-          b: currentWallPoints[1],
+          b: endPoint,
           height: 2700
         };
         addWallToProject(wall);
