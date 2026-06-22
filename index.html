@@ -2,34 +2,155 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visual Project V1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Test-visual • Визуал квартиры</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=1">
 </head>
 <body>
-  <h1>Визуальный проект — Тест V1</h1>
-  
-  <input type="file" id="fileInput" accept="image/*">
-  <canvas id="canvas" width="900" height="650" style="border:2px solid #333; display:block; margin-top:15px; max-width:100%;"></canvas>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <h1>Test-visual</h1>
+        <span class="project-name" id="project-name">Новая квартира</span>
+      </div>
+      <div class="header-right">
+        <button id="btn-save" class="btn">💾 Сохранить</button>
+        <button id="btn-load" class="btn">📂 Загрузить</button>
+        <button id="btn-print" class="btn">🖨️ PDF</button>
+        <button id="btn-clear" class="btn danger">🗑️ Очистить</button>
+      </div>
+    </header>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const input = document.getElementById('fileInput');
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="plan">План</button>
+      <button class="tab" data-tab="sockets">Розетки</button>
+      <button class="tab" data-tab="info">Инфо</button>
+    </div>
 
-    input.onchange = function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        const img = new Image();
-        img.onload = function() {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    };
+    <!-- Main content -->
+    <div id="visual-root">
+      <!-- PLAN VIEW -->
+      <div id="plan-view" class="view active">
+        <div class="toolbar">
+          <div class="tool-group">
+            <button class="tool-btn active" data-tool="select">👆 Выбор</button>
+            <button class="tool-btn" data-tool="wall">🧱 Стена</button>
+            <button class="tool-btn" data-tool="window">🪟 Окно</button>
+            <button class="tool-btn" data-tool="door">🚪 Дверь</button>
+          </div>
+          <div class="tool-group">
+            <label>Масштаб: <span id="scale-display">1 px = 0.05 м</span></label>
+            <button id="btn-calibrate" class="btn small">Калибровать</button>
+          </div>
+          <div class="tool-group">
+            <button id="btn-undo" class="btn small">↩️ Отмена</button>
+            <button id="btn-redo" class="btn small">↪️ Повтор</button>
+          </div>
+        </div>
 
-    console.log('%c[Visual V1] Загружено', 'color:#22c55e');
-  </script>
+        <div id="canvas-container">
+          <svg id="plan-svg" width="100%" height="100%" viewBox="0 0 800 600"></svg>
+          <div id="canvas-overlay"></div>
+        </div>
+
+        <div class="status-bar">
+          <span id="status-text">Готово. Нарисуйте стены или загрузите проект.</span>
+          <span id="mouse-pos"></span>
+        </div>
+      </div>
+
+      <!-- SOCKETS VIEW (будет в Этапе 1) -->
+      <div id="sockets-view" class="view">
+        <div class="toolbar">
+          <div class="tool-group">
+            <button class="tool-btn active" data-socket-tool="place">🔌 Поставить розетку</button>
+            <button class="tool-btn" data-socket-tool="junction">📦 Распайка</button>
+          </div>
+          <div class="tool-group">
+            <label>Высота по умолчанию: <input type="number" id="default-height" value="300" step="50"> мм от пола</label>
+          </div>
+        </div>
+        <div class="sockets-instructions">
+          <p>Кликните на плане — поставить розетку.<br>
+             Кликните по стене — открыть <strong>развёртку стены</strong> и поставить с точными размерами.</p>
+        </div>
+        <div id="sockets-list"></div>
+      </div>
+
+      <!-- INFO VIEW -->
+      <div id="info-view" class="view">
+        <h2>Информация о проекте</h2>
+        <div class="info-grid">
+          <label>Название проекта</label>
+          <input type="text" id="project-name-input" value="Новая квартира">
+          
+          <label>Высота потолка (мм)</label>
+          <input type="number" id="ceiling-height" value="2700">
+          
+          <label>Плоскость трассировки</label>
+          <select id="route-plane">
+            <option value="floor">Пол</option>
+            <option value="ceiling">Потолок</option>
+          </select>
+        </div>
+        <div class="stats">
+          <div>Стен: <span id="stat-walls">0</span></div>
+          <div>Розеток: <span id="stat-sockets">0</span></div>
+          <div>Масштаб: <span id="stat-scale">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wall Projection Modal -->
+  <div id="wall-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Развёртка стены <span id="wall-modal-title"></span></h3>
+        <button class="close-btn" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <svg id="wall-svg" width="100%" height="320"></svg>
+        
+        <div class="wall-controls">
+          <div class="control-row">
+            <label>Высота от пола (мм):</label>
+            <input type="number" id="point-height" value="300" step="50">
+          </div>
+          <div class="control-row">
+            <label>Расстояние от левого угла (мм):</label>
+            <input type="number" id="point-distance" value="500" step="50">
+          </div>
+          <button id="btn-place-on-wall" class="btn primary">Поставить точку здесь</button>
+        </div>
+        
+        <div class="modal-hint">
+          Кликните на развёртке стены, чтобы выбрать позицию.<br>
+          Или введите точные размеры выше.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calibrate Modal -->
+  <div id="calibrate-modal" class="modal hidden">
+    <div class="modal-content small">
+      <h3>Калибровка масштаба</h3>
+      <p>Укажите реальную длину выделенного отрезка стены (в метрах):</p>
+      <input type="number" id="real-length" step="0.1" value="3.0">
+      <div class="modal-actions">
+        <button id="btn-apply-scale" class="btn primary">Применить</button>
+        <button class="btn" id="calibrate-cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/storage.js?v=1"></script>
+  <script src="assets/js/canvas.js?v=1"></script>
+  <script src="assets/js/walls.js?v=1"></script>
+  <script src="assets/js/sockets.js?v=1"></script>
+  <script src="assets/js/app.js?v=1"></script>
 </body>
 </html>
