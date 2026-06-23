@@ -29,6 +29,22 @@
     // Привязываем калибровку масштаба
     bindCalibrate();
 
+    // Полноэкранный режим (улучшенная версия)
+    const fsBtn = document.getElementById('btn-fullscreen');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+          } else {
+            await document.exitFullscreen();
+          }
+        } catch (err) {
+          alert('Полноэкранный режим не поддерживается в этом браузере или требует жеста пользователя.');
+        }
+      });
+    }
+
     // Обновляем UI начальными данными
     updateUIFromProject();
 
