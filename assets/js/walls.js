@@ -66,7 +66,8 @@
     const { x, y, tool } = e.detail;
 
     if (tool === 'wall') {
-      handleWallDrawing(x, y);
+      // Для drag-режима клик используется только для старта, если нужно
+      // Основная логика теперь на pointer events (см. ниже)
     } else if (tool === 'window' || tool === 'door') {
       handleOpeningPlacement(x, y, tool);
     }
